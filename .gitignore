@@ -1,0 +1,11 @@
+# Ignore environment folders
+venv/
+__pycache__/
+
+# Ignore credentials
+gspread_credentials.json
+.streamlit/secrets.toml
+
+# Ignore system files
+.DS_Store
+
