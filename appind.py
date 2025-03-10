@@ -1,62 +1,52 @@
-#STEP 1: Importing libraries
-import streamlit as st #used to create the web app
-import seaborn as sns #used to load datasets and create visualizations
+# STEP 1: Importing libraries
+import streamlit as st  # Used to create the web app
+import seaborn as sns  # Used to load datasets and create visualizations
 import pandas as pd
-import random #used to randomly select  the chart 
-import time #used to measure time taken by users to respond
+import random  # Used to randomly select the chart
+import time  # Used to measure time taken by users to respond
 import matplotlib.pyplot as plt
-
-#####
-import streamlit as st
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd
 
-# Google Sheets Authentication
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("gspread_credentials.json", scope)
-client = gspread.authorize(creds)
+# --- GOOGLE SHEET IMPLEMENTATION ---
 
-# Connect to Google Sheet
-spreadsheet = client.open("taxis_dataset")
-sheet = spreadsheet.sheet1
+# Configure credentials
+SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Load data into DataFrame
-data = sheet.get_all_records()
-df = pd.DataFrame(data)
+# Load credentials from Streamlit Secrets
+credentials_dict = st.secrets["gcp_service_account"]
+credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, SCOPE)
 
-# Display in Streamlit
-st.title("Google Sheets Data in Streamlit")
-st.write(df)
+# Authenticate with Google Sheets
+client = gspread.authorize(credentials)
 
-# Debugging output
-st.write("✅ Successfully connected to Google Sheets!")
-st.write(df)
+# Open the Google Sheet
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1g8ZUEXEzzHFaBfoOhFe6x-0bJvGhy_1-mZcuyv65uzU/edit?usp=sharing"
+spreadsheet = client.open_by_url(SHEET_URL)
+worksheet = spreadsheet.sheet1  # Select the first worksheet
 
+# Function to load data from Google Sheets
+def load_data():
+    data = worksheet.get_all_records()
+    df = pd.DataFrame(data)
+    st.write("✅ Successfully loaded data from Google Sheets!")  # Debugging
+    st.write(df.head())  # Show first rows to verify loading
+    return df
 
-####
+# Load data from Google Sheets into a DataFrame
+df = load_data()
 
-
-
-
-#Business Question : Which day of teh week records more taxi rides ? -> will help us understand demand distribution along the week
-
-#STEP 2: Loading and processing the taxis dataset
-# Load the taxis dataset
-df = sns.load_dataset("taxis")
+# --- BUSINESS QUESTION ---
+st.title("A/B Testing Experiment - Taxi Data")
+st.write("### Business Question: Which day of the week records more taxi rides?")
 
 # Convert the date column and extract the day of the week
 df["pickup"] = pd.to_datetime(df["pickup"])
 df["day_of_week"] = df["pickup"].dt.day_name()
 
-#STEP 3: App title and Business Question
-
-st.title("A/B Testing Experiment - Taxi Data")
-st.write("### Business Question: Which day of the week records more taxi rides?")
-
-#STEP 4:Creating two chart funtions
-
-# Function for Chart A (Bar Chart): Creates a bar chart to show the number of taxi rides per day
+# --- CREATE CHARTS ---
+# Function for Chart A (Bar Chart)
 def plot_chart_a():
     fig, ax = plt.subplots()
     sns.countplot(x=df["day_of_week"], order=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], ax=ax)
@@ -65,7 +55,7 @@ def plot_chart_a():
     ax.set_title("Number of Rides per Day (Bar Chart)")
     st.pyplot(fig)
 
-# Function for Chart B (Line Chart) : Creates a Line chart showing the num of rides per day 
+# Function for Chart B (Line Chart)
 def plot_chart_b():
     fig, ax = plt.subplots()
     df.groupby("day_of_week").size().reindex(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]).plot(kind="line", marker="o", ax=ax)
@@ -74,8 +64,7 @@ def plot_chart_b():
     ax.set_title("Number of Rides per Day (Line Chart)")
     st.pyplot(fig)
 
-#STEP 5: Create tabs to navigate inside the app ( Home: runs the experiment, About: explains the app)
-# Create app tabs
+# --- CREATE APP TABS ---
 tab1, tab2 = st.tabs(["Home", "About"])
 
 with tab1:
@@ -106,6 +95,6 @@ with tab1:
             elapsed_time = end_time - st.session_state.start_time
             st.write(f"You took {elapsed_time:.2f} seconds to answer.")
 
-with tab2: #About tab
+with tab2:  # About tab
     st.header("About this App")
     st.write("This app compares two different visualizations to determine which one is more effective in analyzing taxi demand during a week.")
