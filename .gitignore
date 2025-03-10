@@ -9,3 +9,4 @@ gspread_credentials.json
 # Ignore system files
 .DS_Store
 
+testsecrets.py
