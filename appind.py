@@ -6,6 +6,37 @@ import random #used to randomly select  the chart
 import time #used to measure time taken by users to respond
 import matplotlib.pyplot as plt
 
+#####
+import streamlit as st
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import pandas as pd
+
+# Google Sheets Authentication
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name("gspread_credentials.json", scope)
+client = gspread.authorize(creds)
+
+# Connect to Google Sheet
+spreadsheet = client.open("taxis_dataset")
+sheet = spreadsheet.sheet1
+
+# Load data into DataFrame
+data = sheet.get_all_records()
+df = pd.DataFrame(data)
+
+# Display in Streamlit
+st.title("Google Sheets Data in Streamlit")
+st.write(df)
+
+# Debugging output
+st.write("✅ Successfully connected to Google Sheets!")
+st.write(df)
+
+
+####
+
+
 
 
 #Business Question : Which day of teh week records more taxi rides ? -> will help us understand demand distribution along the week
